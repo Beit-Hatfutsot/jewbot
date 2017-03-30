@@ -24,6 +24,8 @@ def push_code(rev='HEAD', virtualenv=True, requirements=True, cur_date=None):
                 run('pip install -r requirements.txt')
     run('rm -rf /tmp/jewbot-*')
     run('mv /tmp/latest-jewbot-{} /tmp/jewbot-{}'.format(cur_date, cur_date))
+    run('cp /tmp/jewbot-{}/local_config.py jewbot/local_config.py'.format(cur_date))
 
+@hosts("bhs-dev")
 def deploy():
     push_code()
