@@ -4,7 +4,8 @@ import os
 BASE_DIR = os.path.dirname(__file__)
 bot_path = lambda *dirs: os.path.join(BASE_DIR, *dirs)
 
-BOT_DATA_DIR = bot_path("data")
+BOT_DATA_DIR = os.environ.get("JEWBOT_DATA_DIR", "")
+BOT_DATA_DIR = BOT_DATA_DIR if BOT_DATA_DIR else bot_path("data")
 BOT_EXTRA_PLUGIN_DIR = bot_path("plugins")
 
 BOT_LOG_FILE = bot_path("errbot.log")

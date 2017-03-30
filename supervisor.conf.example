@@ -1,0 +1,6 @@
+[program:jewbot]
+command=/home/bhs/jewbot/env/bin/errbot
+autorestart=true
+directory=/home/bhs/jewbot
+user=bhs
+redirect_stderr=true

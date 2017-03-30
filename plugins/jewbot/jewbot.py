@@ -10,6 +10,11 @@ class Jewbot(BotPlugin):
     You can find me in your init directory in the subdirectory plugins.
     """
 
+    def activate(self) -> None:
+        self._bot.MSG_ERROR_OCCURRED = 'Jewbot cannot perform your request, seek rabinical advice'
+        self._bot.MSG_UNKNOWN_COMMAND = 'Unknown command: "%(command)s". '
+        super().activate()
+
     @botcmd
     def jewhelp(self, msg , args):
         yield "Available Jewish commands:"
@@ -34,8 +39,19 @@ class Jewbot(BotPlugin):
         for line in self._run_fab("run_script:{},{},{}".format(env, script, args_str)):
             yield line
 
-    @botcmd(admin_only=True, split_args_with=" ")
+    def _jewlidate(self, msg, args):
+        """
+        Jewish validate the given msg and args - check permissions
+        currently requires admin for every command
+        """
+        if msg.frm.nick.strip().strip("@") in [u.strip().strip("@") for u in self.bot_config.BOT_ADMINS]:
+            return True
+        else:
+            raise Exception("User {} is not in BOT_ADMINS list".format(msg.frm.nick))
+
+    @botcmd(split_args_with=" ")
     def dbs_script(self, msg, args):
+        self._jewlidate(msg, args)
         if not args or args == [""]:
             yield "Available scripts:"
             yield " - !dbs script <dev|prd> ensure_required_metadata [--help]"
@@ -43,8 +59,9 @@ class Jewbot(BotPlugin):
             for line in self._run_script(args.pop(0), args.pop(0), " ".join(args)):
                 yield line
 
-    @botcmd(admin_only=True, split_args_with=" ")
+    @botcmd(split_args_with=" ")
     def dbs_deployed(self, msg, args):
+        self._jewlidate(msg, args)
         env=args.pop(0)
         version = args.pop(0).strip().strip("v") if len(args) > 0 else None
         if version:
