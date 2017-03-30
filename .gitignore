@@ -92,3 +92,4 @@ ENV/
 data
 errbot.log
 .idea
+local_config.py

@@ -9,6 +9,6 @@
 
 ## Configuration
 
-* `cp .env{.example,}`
-* edit .env
+* `cp local_config.py{.example,}`
+* edit local_config.py
 * restart errbot
