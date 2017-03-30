@@ -1,6 +1,7 @@
 from errbot import BotPlugin, botcmd
 from subprocess import Popen, PIPE, STDOUT
 import time
+from io import BytesIO
 
 
 class LowLevelJewbot(BotPlugin):
@@ -16,7 +17,7 @@ class LowLevelJewbot(BotPlugin):
                "cd {dir} && source {env}/bin/activate && fab \"{fab}\"".format(dir=dbs_back_dir, env=dbs_back_env, fab=fab)]
         self.log.debug("cmd={}".format(cmd))
         with Popen(cmd, stdout=PIPE, stderr=STDOUT) as proc:
-            for line in proc.stdout:
+            for line in iter(proc.stdout.readline, b''):
                 yield line.decode()
         if proc.returncode != 0:
             raise Exception("fab command {} failed with returncode = {}".format(fab, proc.returncode))
@@ -42,7 +43,10 @@ class LowLevelJewbot(BotPlugin):
             if num_args < min_args:
                 raise Exception("Not enough arguments, command must have at least {} arguments".format(min_args))
 
-    def _jewlog(self, initial_lines, lines_generator, final_lines):
+    def _jewlog(self, initial_lines, lines_generator, final_lines, reply_to_msg=None):
+        """
+        runs a process or command while streaming the output to #jewbot-log channel
+        """
         flush_interval = 5  # seconds
         if len(initial_lines) > 0:
             yield "\n".join(initial_lines)
@@ -54,13 +58,18 @@ class LowLevelJewbot(BotPlugin):
             for line in lines_generator:
                 tmp_lines.append(line)
                 all_output_lines.append(line)
-                if last_time - time.time() > flush_interval:
+                if time.time() - last_time > flush_interval:
+                    last_time = time.time()
                     send_lines(tmp_lines)
                     tmp_lines = []
         except Exception:
             send_lines(tmp_lines)
             raise
-        yield "\n".join(all_output_lines + final_lines)
+        if reply_to_msg:
+            self.send_stream_request(reply_to_msg.frm, BytesIO("\n".join(all_output_lines).encode("utf-8")), name="Jewbot log")
+            yield "\n".join(final_lines)
+        else:
+            yield "\n".join(all_output_lines + final_lines)
         tmp_lines += final_lines
         send_lines(tmp_lines)
 
@@ -93,7 +102,8 @@ class Jewbot(LowLevelJewbot):
         for line in self._jewlog(["Jewbots roll out! To {} environment".format(bh_env.upper()),
                                   "Executing script '{} {}', check #jewbot-log to see progress".format(script, args_str)],
                                  self._run_fab("run_script:{},{},{}".format(bh_env, script, args_str)),
-                                 ["Great Success!"]):
+                                 ["Great Success! Ran script '{} {}' on {} environment".format(script, args_str, bh_env.upper())],
+                                 reply_to_msg=msg):
             yield line
 
     @botcmd(split_args_with=" ")
