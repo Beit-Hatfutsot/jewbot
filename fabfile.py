@@ -26,6 +26,10 @@ def push_code(rev='HEAD', virtualenv=True, requirements=True, cur_date=None):
     run('mv /tmp/latest-jewbot-{} /tmp/jewbot-{}'.format(cur_date, cur_date))
     run('cp /tmp/jewbot-{}/local_config.py jewbot/local_config.py'.format(cur_date))
 
+def reload():
+    sudo("supervisorctl restart jewbot")
+
 @hosts("bhs-dev")
 def deploy():
     push_code()
+    reload()

@@ -2,6 +2,8 @@ from errbot import BotPlugin, botcmd
 from subprocess import Popen, PIPE, STDOUT
 import time
 from io import BytesIO
+from tempfile import mkstemp
+import os
 
 
 class LowLevelJewbot(BotPlugin):
@@ -92,7 +94,8 @@ class Jewbot(LowLevelJewbot):
         """show help specific to jewbot"""
         yield "\n".join(["Available Jewish commands:",
                          " * !dbs script <ENVIRONMENT> <SCRIPT> <SCRIPT_ARGS> - run a dbs-back script from scripts directory",
-                         " * !dbs deployed <ENVIRONMENT> [VERSION] - set or get the version deployed on dbs-back",])
+                         " * !dbs deployed <ENVIRONMENT> [VERSION] - set or get the version deployed on dbs-back",
+                         " * !dbs fetch <ENVIRONMENT> <FILE> - fetch a file from the server and post to the channel",])
 
     @botcmd(split_args_with=" ")
     def dbs_script(self, msg, args):
@@ -125,3 +128,14 @@ class Jewbot(LowLevelJewbot):
             yield "Jewbot will now attempt to discover which dbs-back version is deployed on {} environment".format(env.upper())
             yield "\n".join(["Sorry, I couldn't find the version myself, but it might appear somewhere in the output:"]
                             + list(self._run_fab("get_deployed_version:{env}".format(env=env))))
+
+    @botcmd(split_args_with=" ")
+    def dbs_fetch(self, msg, args):
+        """fetch a file from an environment"""
+        self._jewlidate(msg, args, min_args=2)
+        bh_env, remote_file, local_file = args.pop(0), args.pop(0), mkstemp()[1]
+        yield "Fetching file {} from {}".format(remote_file, bh_env)
+        fetch_output = "\n".join(list(self._run_fab("fetch_file:{},{},{}".format(bh_env, remote_file, local_file))))
+        with open(local_file, "rb") as f:
+            self.send_stream_request(msg.frm, BytesIO(f.read()), name=remote_file)
+        os.unlink(local_file)
