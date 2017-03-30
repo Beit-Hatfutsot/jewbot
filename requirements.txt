@@ -1,0 +1,3 @@
+errbot==4.3.7.1
+slackclient==1.0.5
+Fabric==1.13.1

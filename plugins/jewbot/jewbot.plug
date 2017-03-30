@@ -1,0 +1,10 @@
+[Core]
+Name = Jewbot
+Module = jewbot
+Core = true
+
+[Documentation]
+Description = Jewbot plugin
+
+[Python]
+Version = 2+
